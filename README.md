@@ -1,59 +1,59 @@
-# ProjetoEmAngular
+# 🎵 Top 100 Álbuns - Estilo Revista
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.7.
+Este é um projeto web front-end que exibe os 100 álbuns mais ouvidos e influentes do mundo. Ele foi construído com uma estética editorial e impactante, inspirada em grandes revistas de cultura pop e música (como a *Rolling Stone*).
 
-## Development server
+## 🚀 Tecnologias Utilizadas
 
-To start a local development server, run:
+O projeto foi construído utilizando os fundamentos clássicos da web, sem a necessidade de frameworks pesados. Isso garante um carregamento super rápido e facilita qualquer customização:
 
-```bash
-ng serve
+- **HTML5**: Estruturação do layout.
+- **CSS3**: Estilização visual (fundo claro, tipografia pesada de impacto e layouts em grid).
+- **JavaScript (Vanilla)**: Injeção de conteúdo dinâmico e transições suaves ao alternar entre as matérias dos álbuns.
+
+## 📂 Estrutura de Arquivos
+
+O projeto está dividido em apenas quatro arquivos principais para manter a simplicidade:
+
+- `index.html`: A estrutura base da página (cabeçalho, barra de navegação e layout de colunas).
+- `style.css`: Todo o design do site. Totalmente responsivo, adaptando-se para celulares e desktops.
+- `script.js`: A lógica responsável por trocar as informações do álbum selecionado sem precisar recarregar a tela.
+- `data.js`: Nosso "banco de dados". É aqui que moram as informações de todos os álbuns (nome, artista, imagem de capa, etc.).
+
+## 🛠️ Como Usar e Testar
+
+Nenhuma instalação ou terminal é necessária para visualizar este projeto! 
+
+1. Certifique-se de ter os arquivos na mesma pasta.
+2. Dê um clique duplo no arquivo **`index.html`**.
+3. O site abrirá instantaneamente no seu navegador padrão.
+
+> **Dica**: Se estiver usando o VS Code, você pode usar a extensão *Live Server* para ver as alterações em tempo real.
+
+## 📝 Como Adicionar Novos Álbuns
+
+Para expandir a lista até chegar aos 100 álbuns, basta editar o arquivo `data.js`. Adicione um novo bloco de chaves `{}` dentro da lista seguindo exatamente esta estrutura:
+
+```javascript
+{
+    id: "nome-unico-sem-espacos",
+    title: "Nome do Álbum",
+    artist: "Nome do Artista",
+    releaseDate: "Data de Lançamento",
+    genre: "Gênero Musical",
+    streams: "Número de Reproduções",
+    coverUrl: "url-ou-nome-da-imagem.jpg",
+    description: "Um resumo sobre a importância do álbum.",
+    tracklist: ["Faixa 1", "Faixa 2", "Faixa 3"],
+    reception: "Como a crítica avaliou o álbum."
+}
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+O código em JavaScript irá automaticamente ler as novas informações, criar o botão no menu lateral e exibir o conteúdo lindamente na tela!
 
-## Code scaffolding
+## 🅰️ Sobre o uso de Angular
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Embora a pasta principal do projeto se chame `projeto_em_angular` e contenha uma estrutura Angular inicial, optamos por construir a interface desta revista digital focada em música (Top 100 Álbuns) inicialmente utilizando **Vanilla HTML, CSS e JS puro**. 
 
-```bash
-ng generate component component-name
-```
+Essa abordagem foi escolhida para entregar rapidamente uma base sólida, semântica e focar 100% no aperfeiçoamento da **estética e design editorial** sem a complexidade de configuração de rotas e componentes pesados no primeiro momento. 
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Como o código (HTML e CSS) está extremamente limpo e modularizado, ele funciona perfeitamente como um **protótipo de alta fidelidade** e pode ser facilmente refatorado e portado para dentro dos componentes do Angular (`.component.html`, `.component.css` e `.component.ts`) no futuro!
