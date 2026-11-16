@@ -2,10 +2,132 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Visualizador 3D</title>
+  <title>Visualizador 3D — Jazz Club</title>
   <style>
-    html, body { margin: 0; height: 100%; background: #0d0503; overflow: hidden; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #0d0503; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; color: #f5d8b5; }
     canvas { display: block; }
+
+    /* Painel flutuante da Vitrola / Jazz Player */
+    .vinyl-player {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 18px;
+      background: rgba(24, 9, 5, 0.88);
+      border: 1px solid rgba(255, 160, 64, 0.35);
+      border-radius: 16px;
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.7), 0 0 20px rgba(217, 123, 36, 0.15);
+      backdrop-filter: blur(10px);
+      z-index: 10;
+      max-width: 94vw;
+    }
+
+    .vinyl-disc {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #d97b24 0 16%, #180905 17% 22%, #111 23% 100%);
+      border: 2px solid #3a180c;
+      box-shadow: inset 0 0 6px rgba(255, 180, 90, 0.35);
+      flex-shrink: 0;
+      animation: spin 4s linear infinite;
+      animation-play-state: paused;
+    }
+    .vinyl-disc.playing {
+      animation-play-state: running;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .track-info {
+      min-width: 170px;
+      max-width: 240px;
+    }
+    .track-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #d97b24;
+      margin-bottom: 2px;
+    }
+    .track-title {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #ffe4c4;
+    }
+    .track-hint {
+      font-size: 11px;
+      color: #b98b68;
+      margin-top: 2px;
+    }
+
+    .player-buttons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn {
+      background: rgba(255, 158, 68, 0.14);
+      color: #ffd39b;
+      border: 1px solid rgba(255, 158, 68, 0.3);
+      border-radius: 10px;
+      padding: 8px 11px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn:hover {
+      background: rgba(255, 158, 68, 0.28);
+      border-color: rgba(255, 180, 100, 0.65);
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #d97b24, #9e2a0e);
+      color: #fff6ea;
+      border-color: #ffae52;
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #ee8c30, #b83414);
+    }
+
+    .volume-slider {
+      width: 75px;
+      accent-color: #d97b24;
+      cursor: pointer;
+    }
+
+    .tooltip-3d {
+      position: fixed;
+      pointer-events: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(20, 7, 4, 0.9);
+      border: 1px solid rgba(255, 160, 64, 0.5);
+      color: #ffe0b8;
+      font-size: 12px;
+      transform: translate(-50%, -130%);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 20;
+      white-space: nowrap;
+    }
+    .tooltip-3d.visible {
+      opacity: 1;
+    }
   </style>
   <script type="importmap">
     {
@@ -17,15 +139,44 @@
   </script>
 </head>
 <body>
-<pre id="erro" style="position:fixed;top:0;left:0;margin:0;padding:8px;color:#f66;font:12px monospace"></pre>
+<pre id="erro" style="position:fixed;top:0;left:0;margin:0;padding:8px;color:#f66;font:12px monospace;z-index:30;pointer-events:none"></pre>
 <script>
   addEventListener('error', (e) => erro.textContent += e.message + '\n');
   addEventListener('unhandledrejection', (e) => erro.textContent += e.reason + '\n');
 </script>
+
+<div id="tooltip" class="tooltip-3d">Clique na vitrola para tocar/pausar Jazz</div>
+
+<div class="vinyl-player">
+  <div id="discIcon" class="vinyl-disc" title="Clique na vitrola 3D ou no botão Play"></div>
+  <div class="track-info">
+    <div class="track-label">Vitrola Jazz Club</div>
+    <div id="trackTitle" class="track-title">Nenhuma música carregada</div>
+    <div id="trackHint" class="track-hint">Clique na vitrola 3D ou carregue seus MP3s</div>
+  </div>
+  <div class="player-buttons">
+    <button id="prevBtn" class="btn" title="Faixa anterior">⏮</button>
+    <button id="playBtn" class="btn btn-primary" title="Tocar / Pausar">▶ Tocar</button>
+    <button id="nextBtn" class="btn" title="Próxima faixa">⏭</button>
+    <input id="volSlider" class="volume-slider" type="range" min="0" max="1" step="0.02" value="0.8" title="Volume">
+    <label class="btn" for="mp3Input" title="Selecionar arquivos MP3 do seu computador">📂 Carregar MP3</label>
+    <input id="mp3Input" type="file" accept="audio/mpeg,audio/mp3,audio/*" multiple hidden>
+  </div>
+</div>
+
 <script type="module">
   import * as THREE from 'three';
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+  // ---- Playlist fixa opcional (arquivos dentro de public/musicas/) ----
+  // Se quiser deixar fixo no projeto, coloque seus .mp3 em public/musicas/
+  // e adicione os nomes abaixo, ex: { title: 'Miles Davis - So What', url: 'musicas/so-what.mp3' }
+  const PLAYLIST = [
+    { title: 'Midnight Saxophone — Jazz Session I', url: 'musicas/jazz1.mp3' },
+    { title: 'Velvet Double Bass — Jazz Session II', url: 'musicas/jazz2.mp3' },
+    { title: 'Late Night Lounge — Jazz Session III', url: 'musicas/jazz3.mp3' },
+  ];
 
   // ---- Albuns na parede ----------------------------------------------
   const ALBUMS = [
@@ -79,6 +230,11 @@
   wallGlow.position.set(-5, -22, -20);
   scene.add(wallGlow);
 
+  // Luz dedicada sobre a vitrola (pulsa suavemente quando a musica toca)
+  const gramophoneLight = new THREE.PointLight(0xffae42, 450, 75, 1.5);
+  gramophoneLight.position.set(-7, -52, -32);
+  scene.add(gramophoneLight);
+
   // Contraluz avermelhada suave no chao/ambiente
   const redRim = new THREE.PointLight(0xd92b04, 600, 160, 1.6);
   redRim.position.set(30, -85, 35);
@@ -119,6 +275,10 @@
     'candles_Material011_0':{ color: 0xffaa33, roughness: 0.2, emissive: 0xff6600, emissiveIntensity: 1.5 }, // chamas das velas
   };
 
+  // Guarda as malhas da caixa de vinil / gramofone para clique e animacao
+  const gramophoneMeshes = [];
+  let hornMesh = null;
+
   room.scene.traverse((o) => {
     if (!o.isMesh) return;
     o.material = o.material.clone();
@@ -132,14 +292,37 @@
         o.material.emissiveIntensity = rule.emissiveIntensity ?? 1;
       }
     } else if (o.name.includes('flower') || o.name.includes('Material015')) {
-      // Folhagens em verde-oliva escuro quente para integrar na luz ambar
       o.material.color.setHex(0x2b2410);
+    }
+
+    // Identifica a vitrola/gramofone ("music_*" na comoda, sem ser os discos "music002_*" da parede)
+    if (o.name.startsWith('music_')) {
+      gramophoneMeshes.push(o);
+      if (o.name === 'music_Material004_0') hornMesh = o;
     }
   });
 
   scene.add(room.scene);
 
-  // Remove o disco de vinil do modelo, deixando so a capa (album na parede)
+  // Cria um disco de vinil 3D giratorio no prato da vitrola para dar feedback visual
+  const spinningPlatter = new THREE.Group();
+  spinningPlatter.position.set(-7.83, -73.7, -39.35);
+  const discGeo = new THREE.CylinderGeometry(5.8, 5.8, 0.18, 48);
+  const discMat = new THREE.MeshStandardMaterial({ color: 0x0b0b0b, roughness: 0.25, metalness: 0.6 });
+  const discMesh = new THREE.Mesh(discGeo, discMat);
+  const labelGeo = new THREE.CylinderGeometry(1.9, 1.9, 0.22, 32);
+  const labelMat = new THREE.MeshStandardMaterial({ color: 0xd9531e, roughness: 0.4, emissive: 0x441100 });
+  const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+  const grooveGeo = new THREE.RingGeometry(2.4, 5.3, 40);
+  const grooveMat = new THREE.MeshBasicMaterial({ color: 0x261710, side: THREE.DoubleSide, transparent: true, opacity: 0.45 });
+  const grooveMesh = new THREE.Mesh(grooveGeo, grooveMat);
+  grooveMesh.rotation.x = -Math.PI / 2;
+  grooveMesh.position.y = 0.11;
+  spinningPlatter.add(discMesh, labelMesh, grooveMesh);
+  scene.add(spinningPlatter);
+  gramophoneMeshes.push(discMesh, labelMesh);
+
+  // Remove o disco de vinil do modelo da parede, deixando so a capa
   const albumTemplate = albumGltf.scene;
   const vinyl = [];
   albumTemplate.traverse((o) => { if (o.name === 'pCylinder3') vinyl.push(o); });
@@ -163,12 +346,10 @@
           o.material.map = tex;
           o.material.needsUpdate = true;
         } else {
-          // Moldura/lombada do album em tom escuro quente
           o.material.color.setHex(0x1f0a06);
         }
       }
     });
-    // Capa virada para a frente (+Z), encostada na parede do fundo
     obj.rotation.x = Math.PI / 2;
     obj.scale.setScalar(ALBUM_SIZE);
     obj.position.set(
@@ -179,13 +360,179 @@
     scene.add(obj);
   });
 
+  // ---- Sistema de Audio (Vitrola Jazz) -------------------------------
+  const audio = new Audio();
+  audio.volume = 0.8;
+  const tracks = [...PLAYLIST];
+  let currentIndex = 0;
+  let isPlaying = false;
+
+  const trackTitleEl = document.getElementById('trackTitle');
+  const trackHintEl = document.getElementById('trackHint');
+  const playBtn = document.getElementById('playBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const volSlider = document.getElementById('volSlider');
+  const mp3Input = document.getElementById('mp3Input');
+  const discIcon = document.getElementById('discIcon');
+  const tooltip = document.getElementById('tooltip');
+
+  function updatePlayerUI() {
+    if (tracks.length === 0) {
+      trackTitleEl.textContent = 'Nenhuma música carregada';
+      trackHintEl.textContent = 'Clique em "Carregar MP3" ou na vitrola 3D';
+      playBtn.textContent = '▶ Tocar';
+      discIcon.classList.remove('playing');
+      return;
+    }
+    const current = tracks[currentIndex];
+    trackTitleEl.textContent = current.title;
+    trackHintEl.textContent = isPlaying
+      ? `Tocando faixa ${currentIndex + 1} de ${tracks.length} • Clique na vitrola para pausar`
+      : `Pausado (${currentIndex + 1}/${tracks.length}) • Clique na vitrola para tocar`;
+    playBtn.textContent = isPlaying ? '⏸ Pausar' : '▶ Tocar';
+    discIcon.classList.toggle('playing', isPlaying);
+  }
+
+  function loadTrack(index, autoPlay = true) {
+    if (tracks.length === 0) return;
+    currentIndex = (index + tracks.length) % tracks.length;
+    audio.src = tracks[currentIndex].url;
+    if (autoPlay) {
+      audio.play().then(() => {
+        isPlaying = true;
+        updatePlayerUI();
+      }).catch((err) => {
+        isPlaying = false;
+        updatePlayerUI();
+        console.warn('Falha ao tocar áudio:', err);
+      });
+    } else {
+      isPlaying = false;
+      updatePlayerUI();
+    }
+  }
+
+  function togglePlay() {
+    if (tracks.length === 0) {
+      mp3Input.click();
+      return;
+    }
+    if (!audio.src) {
+      loadTrack(currentIndex, true);
+      return;
+    }
+    if (audio.paused) {
+      audio.play().then(() => {
+        isPlaying = true;
+        updatePlayerUI();
+      });
+    } else {
+      audio.pause();
+      isPlaying = false;
+      updatePlayerUI();
+    }
+  }
+
+  playBtn.addEventListener('click', togglePlay);
+  prevBtn.addEventListener('click', () => loadTrack(currentIndex - 1, true));
+  nextBtn.addEventListener('click', () => loadTrack(currentIndex + 1, true));
+  volSlider.addEventListener('input', (e) => { audio.volume = parseFloat(e.target.value); });
+  audio.addEventListener('ended', () => loadTrack(currentIndex + 1, true));
+
+  mp3Input.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    files.forEach((file) => {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '');
+      tracks.push({
+        title: cleanName,
+        url: URL.createObjectURL(file),
+      });
+    });
+    if (!isPlaying) {
+      loadTrack(tracks.length - files.length, true);
+    } else {
+      updatePlayerUI();
+    }
+  });
+
+  if (tracks.length > 0) {
+    loadTrack(0, false);
+  } else {
+    updatePlayerUI();
+  }
+
+  // ---- Interacao 3D com a Vitrola (Raycaster) ------------------------
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  let pointerDownPos = { x: 0, y: 0 };
+
+  renderer.domElement.addEventListener('pointermove', (e) => {
+    pointer.x = (e.clientX / innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(gramophoneMeshes, false);
+
+    if (hits.length > 0) {
+      renderer.domElement.style.cursor = 'pointer';
+      tooltip.style.left = `${e.clientX}px`;
+      tooltip.style.top = `${e.clientY}px`;
+      tooltip.textContent = tracks.length === 0
+        ? '🎵 Clique na vitrola para escolher seus MP3s de Jazz'
+        : (isPlaying ? '⏸ Clique na vitrola para pausar o Jazz' : '▶ Clique na vitrola para tocar Jazz');
+      tooltip.classList.add('visible');
+    } else {
+      renderer.domElement.style.cursor = 'grab';
+      tooltip.classList.remove('visible');
+    }
+  });
+
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    pointerDownPos = { x: e.clientX, y: e.clientY };
+  });
+
+  renderer.domElement.addEventListener('pointerup', (e) => {
+    // Evita disparar clique se o usuario estava arrastando a camera
+    const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+    if (dist > 6) return;
+
+    pointer.x = (e.clientX / innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(gramophoneMeshes, false);
+    if (hits.length > 0) {
+      togglePlay();
+    }
+  });
+
   addEventListener('resize', () => {
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
   });
 
+  const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
+    const dt = clock.getDelta();
+    const t = clock.getElapsedTime();
+
+    if (isPlaying) {
+      // Gira o disco de vinil na vitrola 3D
+      spinningPlatter.rotation.y -= dt * 2.4;
+      // Pulsa suavemente a luz e o brilho da corneta dourada
+      gramophoneLight.intensity = 520 + Math.sin(t * 6) * 140;
+      if (hornMesh) {
+        hornMesh.material.emissive.setHex(0x883300);
+        hornMesh.material.emissiveIntensity = 0.25 + Math.sin(t * 7) * 0.12;
+      }
+    } else {
+      gramophoneLight.intensity = 350;
+      if (hornMesh) {
+        hornMesh.material.emissiveIntensity = 0;
+      }
+    }
+
     controls.update();
     renderer.render(scene, camera);
   });
